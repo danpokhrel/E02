@@ -13,6 +13,12 @@ interface ShiftResults {
   balance: number;
 }
 
+interface ReportRow {
+  label: string;
+  value: number;
+  color: string;
+}
+
 let curProducers = 2;
 
 function updateUI() {
@@ -20,8 +26,13 @@ function updateUI() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawProducerBar(shift);
-  drawProductionBar(shift);
-  drawConsumptionBar(shift);
+  const rows = [
+    { label: "Production", value: shift.production, color: "#27766b" },
+    { label: "Consumption", value: shift.consumption, color: "#a44d23" },
+  ];
+  for (let i = 0; i < rows.length; i++) {
+    drawRow(rows[i], 102 + i * 52);
+  }
 
   readout.textContent =
     `Assigned: ${shift.producers}/6 · Production: ${shift.production} · Consumption: ${shift.consumption} · Balance: ${
@@ -42,17 +53,11 @@ function drawProducerBar(shift: ShiftResults) {
   ctx.fillText(`Producers: ${shift.producers} / 6`, 18, 76);
 }
 
-function drawProductionBar(shift: ShiftResults) {
-  ctx.fillText(`Production: ${shift.production}`, 18, 102);
-  ctx.fillStyle = "#27766b";
-  ctx.fillRect(18, 110, shift.production * 14, 20);
-}
-
-function drawConsumptionBar(shift: ShiftResults) {
+function drawRow(record: ReportRow, y: number) {
   ctx.fillStyle = "#233e43";
-  ctx.fillText(`Consumption: ${shift.consumption}`, 18, 154);
-  ctx.fillStyle = "#a44d23";
-  ctx.fillRect(18, 162, shift.consumption * 14, 20);
+  ctx.fillText(`${record.label}: ${record.value}`, 18, y);
+  ctx.fillStyle = record.color;
+  ctx.fillRect(18, y + 8, record.value * 14, 20);
 }
 
 function computeShift(producers: number): ShiftResults {
