@@ -6,72 +6,82 @@ const readout = document.querySelector<HTMLParagraphElement>(
   "#allocation-readout",
 )!;
 
-const state = {
-  producers: 3,
-  consumers: 2,
-  production: 9,
-  consumption: 6,
-  balance: 3,
+interface ShiftResults {
+  producers: number;
+  production: number;
+  consumption: number;
+  balance: number;
 }
+
+let curProducers = 2;
 
 function updateUI() {
-  updateState();
+  const shift = computeShift(curProducers);
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawProducerBar();
-  drawProductionBar();
-  drawConsumptionBar();
+  drawProducerBar(shift);
+  drawProductionBar(shift);
+  drawConsumptionBar(shift);
 
   readout.textContent =
-    `Assigned: ${state.producers}/6 · Production: ${state.production} · Consumption: ${state.consumption} · Balance: ${
-      state.balance > 0 ? "+" : ""
-    }${state.balance}`;
+    `Assigned: ${shift.producers}/6 · Production: ${shift.production} · Consumption: ${shift.consumption} · Balance: ${
+      shift.balance > 0 ? "+" : ""
+    }${shift.balance}`;
 }
 
-function drawProducerBar() {
+function drawProducerBar(shift: ShiftResults) {
   for (let i = 0; i < 6; i++) {
-    ctx.fillStyle = i < state.producers ? "#27766b" : "#c9d2c9";
+    ctx.fillStyle = i < shift.producers ? "#27766b" : "#c9d2c9";
     ctx.fillRect(18 + i * 45, 16, 36, 36);
-    ctx.fillStyle = i < state.producers ? "#ffffff" : "#233e43";
+    ctx.fillStyle = i < shift.producers ? "#ffffff" : "#233e43";
     ctx.font = "16px system-ui";
     ctx.fillText(String(i + 1), 31 + i * 45, 40);
   }
   ctx.fillStyle = "#233e43";
   ctx.font = "14px system-ui";
-  ctx.fillText(`Producers: ${state.producers} / 6`, 18, 76);
+  ctx.fillText(`Producers: ${shift.producers} / 6`, 18, 76);
 }
 
-function drawProductionBar() {
-  ctx.fillText(`Production: ${state.production}`, 18, 102);
+function drawProductionBar(shift: ShiftResults) {
+  ctx.fillText(`Production: ${shift.production}`, 18, 102);
   ctx.fillStyle = "#27766b";
-  ctx.fillRect(18, 110, state.production * 14, 20);
+  ctx.fillRect(18, 110, shift.production * 14, 20);
 }
 
-function drawConsumptionBar() {
+function drawConsumptionBar(shift: ShiftResults) {
   ctx.fillStyle = "#233e43";
-  ctx.fillText(`Consumption: ${state.consumption}`, 18, 154);
+  ctx.fillText(`Consumption: ${shift.consumption}`, 18, 154);
   ctx.fillStyle = "#a44d23";
-  ctx.fillRect(18, 162, state.consumption * 14, 20);
+  ctx.fillRect(18, 162, shift.consumption * 14, 20);
 }
 
-function updateState() {
-  // Clamp producers between 0 - 6
-  state.producers = Math.max(0, Math.min(6, state.producers));
-  state.production = state.producers * 3;
-  state.balance = state.production - state.consumption;
+function computeShift(producers: number): ShiftResults {
+  const production = producers * 3;
+  const consumption = 6;
+  const balance = production - consumption;
+  return {
+    producers,
+    production,
+    consumption,
+    balance,
+  };
+}
+
+function clamp(x: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, x));
 }
 
 document.querySelector<HTMLButtonElement>("#allocation-less")!.onclick = () => {
-  state.producers -= 1;
+  curProducers = clamp(curProducers - 1, 0, 6);
   updateUI();
 };
 document.querySelector<HTMLButtonElement>("#allocation-more")!.onclick = () => {
-  state.producers += 1;
+  curProducers = clamp(curProducers + 1, 0, 6);
   updateUI();
 };
 document.querySelector<HTMLButtonElement>("#allocation-reset")!.onclick =
   () => {
-    state.producers = 2;
+    curProducers = 2;
     updateUI();
   };
 updateUI();
