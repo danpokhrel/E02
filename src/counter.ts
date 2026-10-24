@@ -17,6 +17,15 @@ function shieldSnapshot(): ShieldSnapshot {
   };
 }
 
+const shieldEvents = new EventTarget();
+const SHIELD_CHANGE = "shield-change";
+
+function announceShieldChange(shield: ShieldSnapshot) {
+  shieldEvents.dispatchEvent(
+    new CustomEvent(SHIELD_CHANGE, { detail: shield }),
+  );
+}
+
 const canvas = document.querySelector<HTMLCanvasElement>("#counter-canvas")!;
 const ctx = canvas.getContext("2d")!;
 const readout = document.querySelector<HTMLParagraphElement>(
@@ -53,12 +62,16 @@ function renderStats(shield: ShieldSnapshot) {
     `Shield charge: ${shield.charge} · Missing charge: ${shield.missing}`;
 }
 
+shieldEvents.addEventListener(SHIELD_CHANGE, (event) => {
+  drawMeter((event as CustomEvent<ShieldSnapshot>).detail);
+});
+
 function setCharge(next: number) {
   const bounded = Math.max(0, Math.min(SHIELD_CAPACITY, next));
   if (bounded === charge) return;
   charge = bounded;
   const shield = shieldSnapshot();
-  drawMeter(shield);
+  announceShieldChange(shield);
   if (panel) updateStats(shield);
 }
 
