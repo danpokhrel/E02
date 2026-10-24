@@ -3,6 +3,7 @@ export {};
 const canvas = document.querySelector<HTMLCanvasElement>("#rover-canvas")!;
 const ctx = canvas.getContext("2d")!;
 const readout = document.querySelector<HTMLParagraphElement>("#rover-readout")!;
+
 type Direction = {
   name: string;
   dx: number;
@@ -69,19 +70,77 @@ const rightCommand: Command = {
   },
 };
 
-function runCommand(command: Command) {
-  command.execute();
+const commandQueue: Command[] = [];
+
+function createQueueList(): HTMLOListElement {
+  const list = document.createElement("ol");
+  list.id = "rover-queue";
+  readout.insertAdjacentElement("afterend", list);
+  return list;
+}
+
+function getOrCreateButton(id: string, text: string): HTMLButtonElement {
+  const existing = document.querySelector<HTMLButtonElement>(`#${id}`);
+  if (existing !== null) {
+    existing.disabled = false;
+    return existing;
+  }
+  const button = document.createElement("button");
+  button.id = id;
+  button.type = "button";
+  button.textContent = text;
+  const reset = document.querySelector<HTMLButtonElement>("#rover-reset");
+  if (reset !== null) {
+    reset.before(button);
+  } else {
+    document.body.appendChild(button);
+  }
+  return button;
+}
+
+const queueList = document.querySelector<HTMLOListElement>("#rover-queue") ??
+  createQueueList();
+
+function renderQueue() {
+  queueList.replaceChildren();
+  for (const command of commandQueue) {
+    const item = document.createElement("li");
+    item.textContent = command.label;
+    queueList.appendChild(item);
+  }
+}
+
+function enqueueCommand(command: Command) {
+  commandQueue.push(command);
+  renderQueue();
+}
+
+function runQueue() {
+  while (commandQueue.length > 0) {
+    commandQueue.shift()!.execute();
+  }
   drawRover();
+  renderQueue();
+}
+
+function clearQueue() {
+  commandQueue.length = 0;
+  renderQueue();
 }
 
 document.querySelector<HTMLButtonElement>("#rover-forward")!.onclick = () =>
-  runCommand(forwardCommand);
+  enqueueCommand(forwardCommand);
 document.querySelector<HTMLButtonElement>("#rover-right")!.onclick = () =>
-  runCommand(rightCommand);
+  enqueueCommand(rightCommand);
+getOrCreateButton("rover-run", "Run").onclick = runQueue;
+getOrCreateButton("rover-clear", "Clear").onclick = clearQueue;
 document.querySelector<HTMLButtonElement>("#rover-reset")!.onclick = () => {
   x = 2;
   y = 2;
   direction = 0;
+  commandQueue.length = 0;
   drawRover();
+  renderQueue();
 };
 drawRover();
+renderQueue();
